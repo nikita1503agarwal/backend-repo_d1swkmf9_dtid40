@@ -17,6 +17,9 @@ VM_IN_PROCESS = "VM-IN-PROCESS"
 VM_RESPONDED = "VM-RESPONDED"
 VM_ESCALATED = "VM-ESCALATED"
 
+GMAIL_MODE = os.getenv("GMAIL_MODE", "mock")  # mock | live
+GEMINI_MODE = os.getenv("GEMINI_MODE", "mock")  # mock | live
+
 app = FastAPI(title="Vendor Master Email POC API")
 
 app.add_middleware(
@@ -95,6 +98,37 @@ def test_database():
     return response
 
 
+# ----- Agent Config & Status -----
+@app.get("/agent/config")
+def agent_config():
+    return {
+        "gmail_mode": GMAIL_MODE,
+        "gemini_mode": GEMINI_MODE,
+        "labels": [VM_QUERIES, VM_IN_PROCESS, VM_RESPONDED, VM_ESCALATED],
+    }
+
+
+@app.get("/agent/status")
+def agent_status():
+    if db is None:
+        raise HTTPException(status_code=500, detail="Database not configured")
+    pending = db["emaillog"].count_documents({
+        "labels": {"$in": [VM_QUERIES]},
+        "labels": {"$nin": [VM_IN_PROCESS]},
+    })
+    in_process = db["emaillog"].count_documents({"labels": {"$in": [VM_IN_PROCESS]}})
+    responded = db["emaillog"].count_documents({"labels": {"$in": [VM_RESPONDED]}})
+    escalated = db["emaillog"].count_documents({"labels": {"$in": [VM_ESCALATED]}})
+    return {
+        "pending": pending,
+        "in_process": in_process,
+        "responded": responded,
+        "escalated": escalated,
+        "gmail_mode": GMAIL_MODE,
+        "gemini_mode": GEMINI_MODE,
+    }
+
+
 # ----- Seed data helpers -----
 @app.post("/seed/vendors")
 def seed_vendors(items: Optional[List[SeedVendorRequestIn]] = None):
@@ -142,11 +176,10 @@ def seed_vendors(items: Optional[List[SeedVendorRequestIn]] = None):
         doc = it.model_dump()
         if existing:
             db["vendorrequest"].update_one({"_id": existing["_id"]}, {"$set": {**doc, "updated_at": datetime.now(timezone.utc)}})
-            inserted.append(serialize_doc({**existing, **doc}))
+            updated = db["vendorrequest"].find_one({"request_id": it.request_id})
+            inserted.append(serialize_doc(updated))
         else:
-            _id = create_document("vendorrequest", VendorRequest(**doc))
-            new_doc = db["vendorrequest"].find_one({"_id": db["vendorrequest"].get_collection("vendorrequest").database.client.get_default_database()["vendorrequest"].database.client.get_default_database() if False else None})
-            # Fallback fetch by request_id to return
+            create_document("vendorrequest", VendorRequest(**doc))
             new_doc = db["vendorrequest"].find_one({"request_id": it.request_id})
             inserted.append(serialize_doc(new_doc))
 
@@ -167,9 +200,8 @@ def ingest_mock_email(payload: MockEmailIn):
         body=payload.body,
         labels=[VM_QUERIES],
     )
-    _id = create_document("emaillog", log)
-    doc = db["emaillog"].find_one({"_id": db["emaillog"]._Collection__database["emaillog"].find_one({"_id": _id}) if False else None})
-    # Fallback fetch by thread_id
+    create_document("emaillog", log)
+    # Fetch back for return
     doc = db["emaillog"].find_one({"thread_id": log.thread_id})
     return {"message": "Email ingested", "item": serialize_doc(doc)}
 
@@ -253,6 +285,8 @@ def process_next_email():
     coll.update_one({"_id": doc["_id"]}, {"$set": {"labels": list(labels), "updated_at": datetime.now(timezone.utc)}})
 
     body = doc.get("body", "") + "\n\n" + doc.get("subject", "")
+
+    # If GEMINI_MODE is live, this is where you'd call the LLM to classify
     intent = detect_intent(body)
     entities = extract_entities(body)
 
@@ -371,6 +405,72 @@ def process_next_email():
     # In a real integration, here we'd call Gmail API to send the reply on the thread
 
     return {"processed": True, "item": serialize_doc(updated)}
+
+
+# ----- Agent Orchestration -----
+class RunLoopIn(BaseModel):
+    max_steps: int = Field(10, ge=1, le=100)
+
+
+@app.post("/agent/run-loop")
+def agent_run_loop(payload: RunLoopIn):
+    """Run the agent repeatedly until queue drains or max_steps reached."""
+    steps = 0
+    processed = 0
+    last_item = None
+    while steps < payload.max_steps:
+        res = process_next_email()
+        steps += 1
+        if not res.get("processed"):
+            break
+        processed += 1
+        last_item = res.get("item")
+    return {"steps": steps, "processed": processed, "last_item": last_item}
+
+
+@app.post("/agent/run-once")
+def agent_run_once():
+    return process_next_email()
+
+
+# ----- Gmail scaffolding (mock/live switch) -----
+@app.get("/gmail/poll")
+def gmail_poll():
+    """List pending messages per Gmail-style label query. In live mode, swap with Gmail API calls."""
+    if db is None:
+        raise HTTPException(status_code=500, detail="Database not configured")
+    # Mock: read from emaillog with labels
+    cursor = db["emaillog"].find({"labels": {"$in": [VM_QUERIES]}, "labels": {"$nin": [VM_IN_PROCESS]}}).limit(50)
+    items = [
+        {
+            "threadId": d.get("thread_id"),
+            "messageId": d.get("message_id"),
+            "snippet": (d.get("body", "")[:100] or d.get("subject", "")),
+            "from": d.get("from_email"),
+            "subject": d.get("subject"),
+        }
+        for d in cursor
+    ]
+    return {"mode": GMAIL_MODE, "query": "label:VM-QUERIES -label:VM-IN-PROCESS is:unread", "items": items}
+
+
+class GmailReplyIn(BaseModel):
+    thread_id: str
+    reply_subject: str
+    reply_body: str
+
+
+@app.post("/gmail/reply")
+def gmail_reply(payload: GmailReplyIn):
+    """Send a reply on a thread. In mock mode, just record to log."""
+    if db is None:
+        raise HTTPException(status_code=500, detail="Database not configured")
+    # Mock: append a synthetic log entry to show a reply was made
+    existing = db["emaillog"].find_one({"thread_id": payload.thread_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Thread not found")
+    # No-op for mock (actual send would go here)
+    return {"mode": GMAIL_MODE, "sent": True}
 
 
 # ----- Views for UI -----
