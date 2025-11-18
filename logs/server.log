@@ -1,49 +1,7 @@
 INFO:     Will watch for changes in these directories: ['/home/workspace']
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-INFO:     Started reloader process [281] using StatReload
-INFO:     Started server process [283]
+INFO:     Started reloader process [350] using StatReload
+INFO:     Started server process [352]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     172.20.0.1:56258 - "GET /agent/config HTTP/1.1" 200 OK
-INFO:     172.20.0.1:56322 - "HEAD / HTTP/1.1" 405 Method Not Allowed
-INFO:     172.20.0.1:56258 - "GET /agent/config HTTP/1.1" 200 OK
-INFO:     172.20.0.1:56272 - "GET /logs HTTP/1.1" 200 OK
-INFO:     172.20.0.1:56272 - "GET /logs HTTP/1.1" 200 OK
-INFO:     172.20.0.1:56308 - "GET /gmail/poll HTTP/1.1" 200 OK
-INFO:     172.20.0.1:56300 - "GET /agent/status HTTP/1.1" 200 OK
-INFO:     172.20.0.1:56274 - "GET /analytics/summary HTTP/1.1" 200 OK
-INFO:     172.20.0.1:56308 - "GET /gmail/poll HTTP/1.1" 200 OK
-INFO:     172.20.0.1:56300 - "GET /agent/status HTTP/1.1" 200 OK
-INFO:     172.20.0.1:56274 - "GET /analytics/summary HTTP/1.1" 200 OK
-INFO:     172.20.0.1:52732 - "GET /agent/config HTTP/1.1" 200 OK
-INFO:     172.20.0.1:52730 - "GET /logs HTTP/1.1" 200 OK
-INFO:     172.20.0.1:52744 - "GET /gmail/poll HTTP/1.1" 200 OK
-INFO:     172.20.0.1:52732 - "GET /agent/config HTTP/1.1" 200 OK
-INFO:     172.20.0.1:52736 - "GET /agent/status HTTP/1.1" 200 OK
-INFO:     172.20.0.1:52730 - "GET /logs HTTP/1.1" 200 OK
-INFO:     172.20.0.1:52744 - "GET /gmail/poll HTTP/1.1" 200 OK
-INFO:     172.20.0.1:52716 - "GET /analytics/summary HTTP/1.1" 200 OK
-INFO:     172.20.0.1:52736 - "GET /agent/status HTTP/1.1" 200 OK
-INFO:     172.20.0.1:52716 - "GET /analytics/summary HTTP/1.1" 200 OK
-INFO:     172.20.0.1:49438 - "OPTIONS /seed/vendors HTTP/1.1" 200 OK
-INFO:     172.20.0.1:49438 - "POST /seed/vendors HTTP/1.1" 200 OK
-INFO:     172.20.0.1:49448 - "GET /logs HTTP/1.1" 200 OK
-INFO:     172.20.0.1:49438 - "GET /analytics/summary HTTP/1.1" 200 OK
-INFO:     172.20.0.1:49438 - "GET /agent/status HTTP/1.1" 200 OK
-INFO:     172.20.0.1:49448 - "OPTIONS /ingest/mock-email HTTP/1.1" 200 OK
-INFO:     172.20.0.1:49438 - "POST /ingest/mock-email HTTP/1.1" 200 OK
-INFO:     172.20.0.1:49448 - "GET /logs HTTP/1.1" 200 OK
-INFO:     172.20.0.1:49438 - "GET /analytics/summary HTTP/1.1" 200 OK
-INFO:     172.20.0.1:49438 - "GET /gmail/poll HTTP/1.1" 200 OK
-INFO:     172.20.0.1:49438 - "GET /agent/status HTTP/1.1" 200 OK
-INFO:     172.20.0.1:49438 - "OPTIONS /agent/run-once HTTP/1.1" 200 OK
-INFO:     172.20.0.1:49448 - "POST /agent/run-once HTTP/1.1" 200 OK
-INFO:     172.20.0.1:49438 - "GET /logs HTTP/1.1" 200 OK
-INFO:     172.20.0.1:49448 - "GET /analytics/summary HTTP/1.1" 200 OK
-INFO:     172.20.0.1:49448 - "GET /gmail/poll HTTP/1.1" 200 OK
-INFO:     172.20.0.1:49448 - "GET /agent/status HTTP/1.1" 200 OK
-INFO:     172.20.0.1:49464 - "OPTIONS / HTTP/1.1" 200 OK
-INFO:     172.20.0.1:49464 - "OPTIONS / HTTP/1.1" 200 OK
-INFO:     172.20.0.1:49464 - "GET / HTTP/1.1" 200 OK
-INFO:     172.20.0.1:49464 - "GET / HTTP/1.1" 200 OK
-INFO:     172.20.0.1:48486 - "OPTIONS /test HTTP/1.1" 200 OK
+INFO:     172.20.0.1:54820 - "HEAD / HTTP/1.1" 405 Method Not Allowed
